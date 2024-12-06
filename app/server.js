@@ -1,14 +1,38 @@
-// server.js
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const rssFeedRoutes = require('./src/router/rssFeed.router');
+const userRoutes = require('./src/router/user.router');
+const swaggerJsDoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 
 const app = express();
 
 // Middleware
 app.use(express.json());
 app.use('/api', rssFeedRoutes);
+app.use('/api', userRoutes);
+
+// Swagger Configuration
+const swaggerOptions = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'API Documentation',
+            version: '1.0.0',
+            description: 'Documentation de votre API',
+        },
+        servers: [
+            {
+                url: 'http://localhost:3000/api',
+            },
+        ],
+    },
+    apis: ['./src/router/*.js'], // Chemin vers vos fichiers contenant des commentaires Swagger
+};
+
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // MongoDB Connection - Version moderne
 mongoose.connect(process.env.MONGODB_URI)
@@ -19,6 +43,7 @@ mongoose.connect(process.env.MONGODB_URI)
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`URL: http://localhost:${PORT}`);
+    console.log(`Swagger Docs: http://localhost:${PORT}/api-docs`);
 });
 
 module.exports = app;
