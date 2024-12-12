@@ -10,6 +10,8 @@ const app = express();
 
 // Middleware
 app.use(express.json());
+app.get('/', (req, res) => { res.send('Hello !'); });
+
 app.use('/api', rssFeedRoutes);
 app.use('/api', userRoutes);
 
@@ -40,7 +42,7 @@ mongoose.connect(process.env.MONGODB_URI)
     .catch(err => console.error('Erreur de connexion MongoDB:', err));
 
 // Server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
     console.log(`URL: http://localhost:${PORT}`);
     console.log(`Swagger Docs: http://localhost:${PORT}/api-docs`);
