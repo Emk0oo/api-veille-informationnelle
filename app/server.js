@@ -1,46 +1,60 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const mongoose = require('mongoose');
-const rssFeedRoutes = require('./src/router/rssFeed.router');
-const userRoutes = require('./src/router/user.router');
 const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
+const { swaggerOptions, swaggerUiOptions } = require('./src/config/swagger.config');
 
 const app = express();
 
-// Middleware
+// Middleware de base
 app.use(express.json());
+app.use(express.static('public'));
+app.use(cors({
+    origin: 'http://localhost:4200', // URL de votre application Angular
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  }));
+
+// Initialisation de Swagger
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve);
+app.get('/api-docs', swaggerUi.setup(swaggerDocs, swaggerUiOptions));
+
+// Route publique
+app.get('/', (req, res) => { 
+    res.send('Hello !'); 
+});
+
+// Routes d'authentification (non protégées)
+const authRoutes = require('./src/router/auth.router');
+app.use('/api/auth', authRoutes);
+
+// Middleware d'authentification pour les routes protégées
+const authMiddleware = require('./src/middleware/auth.middleware');
+
+// Application du middleware sur toutes les routes /api SAUF /api/auth
+app.use('/api', (req, res, next) => {
+    if (req.path.startsWith('/auth')) {
+        return next();
+    }
+    return authMiddleware(req, res, next);
+});
+
+// Routes protégées
+const rssFeedRoutes = require('./src/router/rssFeed.router');
+const userRoutes = require('./src/router/user.router');
 app.use('/api', rssFeedRoutes);
 app.use('/api', userRoutes);
 
-// Swagger Configuration
-const swaggerOptions = {
-    definition: {
-        openapi: '3.0.0',
-        info: {
-            title: 'API Documentation',
-            version: '1.0.0',
-            description: 'Documentation de votre API',
-        },
-        servers: [
-            {
-                url: 'http://localhost:3000/api',
-            },
-        ],
-    },
-    apis: ['./src/router/*.js'], // Chemin vers vos fichiers contenant des commentaires Swagger
-};
-
-const swaggerDocs = swaggerJsDoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
-
-// MongoDB Connection - Version moderne
+// MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('Connecté à MongoDB'))
     .catch(err => console.error('Erreur de connexion MongoDB:', err));
 
 // Server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
     console.log(`URL: http://localhost:${PORT}`);
     console.log(`Swagger Docs: http://localhost:${PORT}/api-docs`);
