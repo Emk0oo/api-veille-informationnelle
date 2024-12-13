@@ -2,6 +2,14 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/user.controller');
 
+router.get('/users', userController.getAllUsers);
+router.get('/user/:id', userController.getUser);
+router.post('/user', userController.createUser);
+router.put('/user/:id', userController.updateUser);
+router.delete('/user/:id', userController.deleteUser);
+router.post('/user/:userId/feed', userController.addFeedToUser);
+router.delete('/user/:userId/feed/:feedId', userController.removeFeedFromUser);
+
 /**
  * @swagger
  * components:
@@ -58,7 +66,6 @@ const userController = require('../controllers/user.controller');
  *       500:
  *         description: Erreur serveur
  */
-router.get('/users', userController.getAllUsers);
 
 /**
  * @swagger
@@ -85,7 +92,6 @@ router.get('/users', userController.getAllUsers);
  *       500:
  *         description: Erreur serveur
  */
-router.get('/user/:id', userController.getUser);
 
 /**
  * @swagger
@@ -120,7 +126,6 @@ router.get('/user/:id', userController.getUser);
  *       400:
  *         description: Données invalides
  */
-router.post('/user', userController.createUser);
 
 /**
  * @swagger
@@ -149,7 +154,6 @@ router.post('/user', userController.createUser);
  *       400:
  *         description: Données invalides
  */
-router.put('/user/:id', userController.updateUser);
 
 /**
  * @swagger
@@ -172,7 +176,6 @@ router.put('/user/:id', userController.updateUser);
  *       500:
  *         description: Erreur serveur
  */
-router.delete('/user/:id', userController.deleteUser);
 
 /**
  * @swagger
@@ -205,7 +208,6 @@ router.delete('/user/:id', userController.deleteUser);
  *       400:
  *         description: Données invalides
  */
-router.post('/user/:userId/feed', userController.addFeedToUser);
 
 /**
  * @swagger
@@ -238,6 +240,5 @@ router.post('/user/:userId/feed', userController.addFeedToUser);
  *       500:
  *         description: Erreur serveur
  */
-router.delete('/user/:userId/feed/:feedId', userController.removeFeedFromUser);
 
 module.exports = router;

@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const mongoose = require('mongoose');
 const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
@@ -10,6 +11,11 @@ const app = express();
 // Middleware de base
 app.use(express.json());
 app.use(express.static('public'));
+app.use(cors({
+    origin: 'http://localhost:4200', // URL de votre application Angular
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  }));
 
 // Initialisation de Swagger
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
@@ -23,11 +29,18 @@ app.get('/', (req, res) => {
 
 // Routes d'authentification (non protégées)
 const authRoutes = require('./src/router/auth.router');
-app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 
 // Middleware d'authentification pour les routes protégées
 const authMiddleware = require('./src/middleware/auth.middleware');
-app.use('/api', authMiddleware);
+
+// Application du middleware sur toutes les routes /api SAUF /api/auth
+app.use('/api', (req, res, next) => {
+    if (req.path.startsWith('/auth')) {
+        return next();
+    }
+    return authMiddleware(req, res, next);
+});
 
 // Routes protégées
 const rssFeedRoutes = require('./src/router/rssFeed.router');

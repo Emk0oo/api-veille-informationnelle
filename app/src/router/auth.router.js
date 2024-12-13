@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth.controller');
-const authMiddleware = require('../middleware/auth.middleware');
+
+router.post('/register', authController.register);
+router.post('/login', authController.login);
+
+module.exports = router;
 
 /**
  * @swagger
@@ -78,7 +82,6 @@ const authMiddleware = require('../middleware/auth.middleware');
  *       409:
  *         description: Email déjà utilisé
  */
-router.post('/register', authController.register);
 
 /**
  * @swagger
@@ -105,6 +108,3 @@ router.post('/register', authController.register);
  *       400:
  *         description: Données manquantes
  */
-router.post('/login', authController.login);
-
-module.exports = router;

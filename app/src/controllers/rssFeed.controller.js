@@ -1,6 +1,6 @@
 const Parser = require('rss-parser');
 const parser = new Parser();
-const RssFeed = require('../models/RssFeed');
+const RssFeed = require('../models/RssFeed.model');
 
 // Obtenir tous les flux
 exports.getAllFeeds = async (req, res) => {
