@@ -3,7 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
-const path = require('path');
+const { swaggerOptions, swaggerUiOptions } = require('./src/config/swagger.config');
 
 const app = express();
 
@@ -11,59 +11,8 @@ const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 
-// Configuration Swagger
-const swaggerOptions = {
-    definition: {
-        openapi: '3.0.0',
-        info: {
-            title: 'API RSS Reader',
-            version: '1.0.0',
-            description: 'API de gestion de flux RSS'
-        },
-        components: {
-            securitySchemes: {
-                bearerAuth: {
-                    type: 'http',
-                    scheme: 'bearer',
-                    bearerFormat: 'JWT'
-                }
-            }
-        },
-        security: [{
-            bearerAuth: []
-        }],
-        servers: [
-            {
-                url: 'https://api-veille-informationelle.vercel.app',
-                description: 'Production server'
-            },
-            {
-                url: `http://localhost:${process.env.PORT || 3001}`,
-                description: 'Development server'
-            }
-        ]
-    },
-    apis: [path.join(__dirname, './src/router/*.js')] // Utilisation de path.join pour les chemins
-};
-
 // Initialisation de Swagger
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
-
-// Configuration de Swagger UI
-const swaggerUiOptions = {
-    explorer: true,
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: "API RSS Reader Documentation",
-    swaggerOptions: {
-        persistAuthorization: true,
-        displayRequestDuration: true,
-        docExpansion: 'none',
-        filter: true,
-        showExtensions: true
-    }
-};
-
-// Route Swagger UI
 app.use('/api-docs', swaggerUi.serve);
 app.get('/api-docs', swaggerUi.setup(swaggerDocs, swaggerUiOptions));
 
