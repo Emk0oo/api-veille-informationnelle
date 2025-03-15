@@ -1,0 +1,17 @@
+{
+  "name": "api-veille",
+  "version": "1.0.0",
+  "description": "api-veille rss feeds",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "JAVOR",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.13.0"
+  }
+}
