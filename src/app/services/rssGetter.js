@@ -2,12 +2,13 @@ const RssParser = require('rss-parser');
 const parser = new RssParser();
 
 async function getRssFeed(url) {
-    await parser.parseURL(url).then((feed) => {
-        console.log(feed.title);
-        feed.items.forEach(item => {
-            console.log(item.title + ':' + item.link);
-        });
-    });
+    try {
+        const feed = await parser.parseURL(url);
+        return feed;
+    } catch (error) {
+        console.error("Error fetching RSS feed:", error);
+        throw error;
+    }
 }
 
 module.exports = { getRssFeed };
