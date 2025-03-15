@@ -6,6 +6,7 @@ const db = require("./config/db");
 const verifyToken = require("./middleware/verifyTokenValidity");
 const authRoute = require("./routes/auth.route");
 const rssFeedsRoute = require("./routes/rssFeeds.route");
+const subscriptionRoute = require("./routes/subscriptions.route");
 
 const port = process.env.API_PORT;
 
@@ -15,6 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/auth", authRoute);
 app.use(verifyToken);
 app.use("/api/rssFeeds", rssFeedsRoute);
+app.use("/api/subscriptions", subscriptionRoute);
 
 
 
