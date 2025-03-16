@@ -30,8 +30,40 @@ class Articles {
     }
 
     static create(newArticle, result) {
-        const query = "INSERT INTO articles SET ?";
-        db.query(query, newArticle, result);
+        const query = `
+            INSERT INTO articles (feed_id, title, link, category_id, published_at, content, content_snippet, image_url, guid, iso_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE 
+                title = VALUES(title), 
+                category_id = VALUES(category_id), 
+                published_at = VALUES(published_at), 
+                content = VALUES(content), 
+                content_snippet = VALUES(content_snippet),
+                image_url = VALUES(image_url), 
+                iso_date = VALUES(iso_date)
+        `;
+    
+        const values = [
+            newArticle.feed_id, newArticle.title, newArticle.link, newArticle.category_id,
+            newArticle.published_at, newArticle.content, newArticle.content_snippet, newArticle.image_url,
+            newArticle.guid, newArticle.iso_date
+        ];
+    
+        // Vérification pour éviter les erreurs SQL
+        if (values.length !== 10) {
+            console.error("Erreur : Nombre de valeurs incorrect", values);
+            result(new Error("Nombre de valeurs incorrect"), null);
+            return;
+        }
+    
+        db.query(query, values, (err, res) => {
+            if (err) {
+                console.error("Erreur lors de l'insertion/mise à jour de l'article:", err);
+                result(err, null);
+                return;
+            }
+            result(null, res);
+        });
     }
 
     static updateById(id, article, result) {
@@ -72,6 +104,16 @@ class Articles {
     static getArticleCountByFeedIdAndPublishedAt(feed_id, published_at, result) {
         const query = "SELECT COUNT(*) AS article_count FROM articles WHERE feed_id = ? AND published_at = ?";
         db.query(query, [feed_id, published_at], result);
+    }
+
+    static getArticleByTitle(title, result) {
+        const query = "SELECT * FROM articles WHERE title = ?";
+        db.query(query, title, result);
+    }
+
+    static getArticleByFeedId(feed_id, result) {
+        const query = "SELECT * FROM articles WHERE feed_id = ?";
+        db.query(query, feed_id, result);
     }
 
     static getArticlesByPublishedAt(published_at, result) {

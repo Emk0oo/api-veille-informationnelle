@@ -1,7 +1,8 @@
 const { get } = require("mongoose");
 const RssFeeds = require("../models/rssFeeds.model");
 const Subscription = require("../models/subscriptions.model");
-const RssFeed = require("../services/rssGetter");
+const RssFeed = require("../services/rssFeeds.service");
+const Articles = require("../models/articles.model");
 
 exports.getAll = (req, res) => {
     RssFeeds.getAll((err, data) => {
@@ -121,8 +122,6 @@ exports.getAllFeedsForUser = async (req, res) => {
             const feeds = [];
             
             for (const subscription of subscriptions) {
-                const length = subscriptions.length;
-                // console.log(subscription);
 
                 let feedid = subscription.feed_id;
                 try {
@@ -136,22 +135,26 @@ exports.getAllFeedsForUser = async (req, res) => {
                         });
                     });
                     
-                    console.log(data);
+                    // console.log(data);
                     for (const feed of data) {
                         try {
                             const rssFeed = await RssFeed.getRssFeed(feed.url);
                             feeds.push({
+                                feed_id: feed.id,
                                 title: rssFeed.title,
-                                items: rssFeed.items
+                                items: rssFeed.items,
+                                category_id: feed.category
                             });
                         } catch (error) {
                             console.error(`Error fetching RSS feed for ${feed.url}:`, error);
                         }
                     }
+                    
                 } catch (err) {
                     console.error(`Error fetching feed for ${feedid}:`, err);
                 }
             }
+            RssFeed.createArticles(feeds);
             res.status(200).send(feeds);
         } catch (error) {
             console.error("Error fetching RSS feeds:", error);
