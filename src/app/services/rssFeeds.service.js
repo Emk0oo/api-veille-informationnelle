@@ -24,6 +24,30 @@ async function getRssFeed(url) {
   }
 }
 
+// Fonction pour nettoyer le HTML
+function stripHtml(html) {
+  if (!html) return "";
+  
+  // Supprimer les balises CDATA
+  let text = html.toString().replace(/<!\[CDATA\[|\]\]>/g, "");
+  
+  // Supprimer les balises HTML
+  text = text.replace(/<[^>]*>/g, " ");
+  
+  // Remplacer les entités HTML courantes
+  text = text.replace(/&nbsp;/g, " ")
+             .replace(/&amp;/g, "&")
+             .replace(/&lt;/g, "<")
+             .replace(/&gt;/g, ">")
+             .replace(/&quot;/g, "\"")
+             .replace(/&#39;/g, "'");
+  
+  // Supprimer les espaces multiples
+  text = text.replace(/\s+/g, " ").trim();
+  
+  return text;
+}
+
 let totalArticlesCreated = 0;
 
 async function createArticles(articles) {
@@ -68,17 +92,9 @@ async function createArticles(articles) {
           }
         }
 
-        // Extraire le contenu ou la description
-        let content = item.content || "";
-        let contentSnippet = item.contentSnippet || item.description || "";
-        
-        // Nettoyer les contenus avec CDATA
-        if (content && typeof content === 'string') {
-          content = content.replace(/<!\[CDATA\[|\]\]>/g, "");
-        }
-        if (contentSnippet && typeof contentSnippet === 'string') {
-          contentSnippet = contentSnippet.replace(/<!\[CDATA\[|\]\]>/g, "");
-        }
+        // Extraire le contenu ou la description et nettoyer le HTML
+        let content = stripHtml(item.content || "");
+        let contentSnippet = stripHtml(item.contentSnippet || item.description || "");
         
         // Extraire les catégories ou sujets (dc:subject)
         let categories = [];
@@ -97,9 +113,16 @@ async function createArticles(articles) {
           guid = item.link; // Utiliser le lien comme GUID de secours
         }
 
+        // Normaliser le titre
+        let title = "";
+        if (item.title) {
+          title = typeof item.title === 'string' ? item.title : item.title._;
+          title = stripHtml(title);
+        }
+
         const newArticle = {
           feed_id: article.feed_id,
-          title: item.title ? (typeof item.title === 'string' ? item.title : item.title._) : "",
+          title: title,
           link: item.link || "",
           category_id: article.category_id || null,
           published_at: publishedAt,
