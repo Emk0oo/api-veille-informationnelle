@@ -84,4 +84,41 @@ async function createArticles(articles) {
     }
 }
 
+async function refreshIncomingArticle() {
+    try {
+        const feeds = await new Promise((resolve, reject) => {
+            RssFeeds.getAll((err, result) => {
+                if (err) reject(err);
+                else resolve(result);
+            });
+        });
+
+        if (!feeds || feeds.length === 0) {
+            console.warn("Aucun flux RSS trouvé.");
+            return;
+        }
+
+        const articles = [];
+        for (const feed of feeds) {
+            try {
+                const rssFeed = await getRssFeed(feed.url);
+                articles.push({
+                    feed_id: feed.id,
+                    title: rssFeed.title,
+                    items: rssFeed.items,
+                    category_id: feed.category
+                });
+            } catch (error) {
+                console.error(`Erreur lors de la récupération du flux RSS pour ${feed.url}:`, error);
+            }
+        }
+
+        const articlesCreated = await createArticles(articles);
+        console.log(`Processus terminé. ${articlesCreated} nouveaux articles créés.`);
+
+    } catch (error) {
+        console.error("Erreur lors de la récupération des flux RSS:", error);
+    }
+}
+
 module.exports = { getRssFeed, createArticles };
