@@ -7,6 +7,7 @@ const verifyToken = require("./middleware/verifyTokenValidity");
 const authRoute = require("./routes/auth.route");
 const rssFeedsRoute = require("./routes/rssFeeds.route");
 const subscriptionRoute = require("./routes/subscriptions.route");
+const rssFeedService = require("./services/rssFeeds.service");
 
 const port = process.env.API_PORT;
 

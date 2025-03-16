@@ -1,8 +1,10 @@
 const RssParser = require("rss-parser");
 const parser = new RssParser();
 
+const RssFeeds = require("../models/rssFeeds.model");
 const Articles = require("../models/articles.model");
 const { data } = require("autoprefixer");
+const { set } = require("mongoose");
 
 async function getRssFeed(url) {
   try {
@@ -75,7 +77,7 @@ async function createArticles(articles) {
             }
         }
 
-        // console.log(`Processus terminé. ${articlesCreated} nouveaux articles créés.`);
+        console.log(`Processus terminé. ${articlesCreated} nouveaux articles créés.`);
         return articlesCreated;
 
     } catch (error) {
@@ -114,11 +116,13 @@ async function refreshIncomingArticle() {
         }
 
         const articlesCreated = await createArticles(articles);
-        console.log(`Processus terminé. ${articlesCreated} nouveaux articles créés.`);
+        // console.log(`Processus terminé. ${articlesCreated} nouveaux articles créés.`);
 
     } catch (error) {
         console.error("Erreur lors de la récupération des flux RSS:", error);
     }
 }
 
-module.exports = { getRssFeed, createArticles };
+setInterval(refreshIncomingArticle, 2000);
+
+module.exports = { getRssFeed, createArticles, refreshIncomingArticle };
