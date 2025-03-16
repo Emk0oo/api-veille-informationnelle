@@ -3,6 +3,7 @@ const router = express.Router();
 const rssFeedsController = require("../controllers/rssFeeds.controller");
 
 router.get("/", rssFeedsController.getAll);
+router.get("/last3", rssFeedsController.find3LastArticles);
 router.get("/:id", rssFeedsController.getById);
 router.get("/category/:category", rssFeedsController.getByCategory);
 router.post("/", rssFeedsController.create);

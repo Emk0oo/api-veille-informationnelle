@@ -13,9 +13,6 @@ exports.findAll = (req, res) => {
     });
 };
 
-//Retrieve all by date 
-
-
 // Find a single article with an articleId
 exports.findOne = (req, res) => {
     Articles.getById(req.params.articleId, (err, data) => {

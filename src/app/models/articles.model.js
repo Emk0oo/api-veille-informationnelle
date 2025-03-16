@@ -19,6 +19,11 @@ class Articles {
         db.query(query, result);
     }
 
+    static get3LastArticles(result) {
+        const query = "SELECT * FROM articles ORDER BY published_at DESC LIMIT 3";
+        db.query(query, result);
+    }
+
     static getById(id, result) {
         const query = "SELECT * FROM articles WHERE id = ?";
         db.query(query, id, result);

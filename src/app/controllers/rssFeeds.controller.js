@@ -34,6 +34,20 @@ exports.getById = (req, res) => {
     });
 };
 
+//Retrieve 3 last articles from the database
+
+exports.find3LastArticles = (req, res) => {
+    Articles.get3LastArticles((err, data) => {
+        if (err) {
+            res.status(500).send({
+                message: err.message || "An error occurred while retrieving articles."
+            });
+        } else {
+            res.send(data);
+        }
+    });
+};
+
 exports.getByCategory = (req, res) => {
     RssFeeds.getByCategory(req.params.category, (err, data) => {
         if (err) {
