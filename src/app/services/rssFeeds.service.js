@@ -1,10 +1,18 @@
 const RssParser = require("rss-parser");
-const parser = new RssParser();
+const parser = new RssParser({
+  customFields: {
+    item: [
+      ['media:content', 'mediaContent', {keepArray: true}],
+      ['dc:subject', 'dcSubject', {keepArray: true}],
+      ['dc:creator', 'dcCreator'],
+      ['dc:date', 'dcDate'],
+      ['enclosure', 'enclosure']
+    ]
+  }
+});
 
 const RssFeeds = require("../models/rssFeeds.model");
 const Articles = require("../models/articles.model");
-const { data } = require("autoprefixer");
-const { set } = require("mongoose");
 
 async function getRssFeed(url) {
   try {
@@ -30,73 +38,107 @@ async function createArticles(articles) {
       for (const item of article.items) {
         if (!item) continue;
 
+        // Extraire une image depuis différentes sources possibles
+        let imageUrl = null;
+        if (item.enclosure && item.enclosure.url) {
+          imageUrl = item.enclosure.url;
+        } else if (item.mediaContent && item.mediaContent.length > 0) {
+          const media = item.mediaContent.find(m => m.$ && (m.$.url || m.$.href));
+          if (media && media.$) {
+            imageUrl = media.$.url || media.$.href;
+          }
+        }
+
+        // Gérer les différentes façons de stocker la date de publication
+        let publishedAt = null;
+        const possibleDateFields = [
+          item.pubDate,
+          item.dcDate,
+          item.isoDate,
+          item.date
+        ];
+
+        for (const dateField of possibleDateFields) {
+          if (dateField) {
+            const dateObj = new Date(dateField);
+            if (!isNaN(dateObj.getTime())) {
+              publishedAt = dateObj.toISOString().slice(0, 19).replace("T", " ");
+              break;
+            }
+          }
+        }
+
+        // Extraire le contenu ou la description
+        let content = item.content || "";
+        let contentSnippet = item.contentSnippet || item.description || "";
+        
+        // Nettoyer les contenus avec CDATA
+        if (content && typeof content === 'string') {
+          content = content.replace(/<!\[CDATA\[|\]\]>/g, "");
+        }
+        if (contentSnippet && typeof contentSnippet === 'string') {
+          contentSnippet = contentSnippet.replace(/<!\[CDATA\[|\]\]>/g, "");
+        }
+        
+        // Extraire les catégories ou sujets (dc:subject)
+        let categories = [];
+        if (item.categories && Array.isArray(item.categories)) {
+          categories = item.categories;
+        } else if (item.dcSubject && Array.isArray(item.dcSubject)) {
+          categories = item.dcSubject;
+        }
+
+        // Normaliser le GUID
+        let guid = item.guid;
+        if (typeof guid === 'object' && guid._) {
+          guid = guid._;
+        }
+        if (!guid && item.link) {
+          guid = item.link; // Utiliser le lien comme GUID de secours
+        }
+
         const newArticle = {
           feed_id: article.feed_id,
-          title: item.title,
-          link: item.link,
-          category_id: item.category_id || null,
-          published_at: item.pubDate
-            ? new Date(item.pubDate)
-                .toISOString()
-                .slice(0, 19)
-                .replace("T", " ")
-            : null,
-          content: item.content || "",
-          content_snippet: item.contentSnippet || "",
-          image_url: item.enclosure?.url || null,
-          guid: item.guid,
-          iso_date: item.isoDate,
+          title: item.title ? (typeof item.title === 'string' ? item.title : item.title._) : "",
+          link: item.link || "",
+          category_id: article.category_id || null,
+          published_at: publishedAt,
+          content: content,
+          content_snippet: contentSnippet,
+          image_url: imageUrl,
+          guid: guid,
+          iso_date: item.isoDate || publishedAt
         };
 
         try {
-          const existingArticle = await new Promise((resolve, reject) => {
-            Articles.getArticlesByFeedIdAndGuid(
-              newArticle.feed_id,
-              newArticle.guid,
-              (err, result) => {
-                if (err) reject(err);
-                else resolve(result);
-              }
-            );
-          });
-
-          console.log(
-            `🔍 Vérification du doublon pour GUID: ${newArticle.guid}, Résultat:`,
-            existingArticle
-          );
-
-          if (existingArticle.length > 0) {
-            console.log(`❌ Article déjà existant: ${newArticle.title}`);
+          // Vérifier si l'article existe déjà
+          const exists = await Articles.existsByGuid(newArticle.guid);
+          if (exists) {
             continue;
           }
 
           await new Promise((resolve, reject) => {
             Articles.create(newArticle, (err, data) => {
               if (err) reject(err);
-              else resolve(data);
+              else {
+                articlesCreated++;
+                totalArticlesCreated++;
+                resolve(data);
+              }
             });
           });
-
-          articlesCreated++;
-          totalArticlesCreated++;
-          console.log(
-            `✅ Article inséré: ${newArticle.title} (Total: ${totalArticlesCreated})`
-          );
         } catch (error) {
-          console.error(
-            `❌ Erreur lors du traitement de l'article ${newArticle.guid}:`,
-            error
-          );
+          console.error(`Error processing article ${newArticle.guid}:`, error);
         }
       }
     }
 
-    console.log(`🔄 Cycle terminé. ${articlesCreated} nouveaux articles.`);
-    console.log(`📊 Total cumulé d'articles créés: ${totalArticlesCreated}`);
+    console.log(`Total articles created in this cycle: ${articlesCreated}`);
+    console.log(`Cumulative total articles created: ${totalArticlesCreated}`);
 
     return articlesCreated;
   } catch (error) {
-    console.error("❌ Erreur globale dans createArticles:", error);
+    console.error("Global error in createArticles:", error);
     throw error;
   }
 }
@@ -111,7 +153,7 @@ async function refreshIncomingArticle() {
     });
 
     if (!feeds || feeds.length === 0) {
-      console.warn("⚠️ Aucun flux RSS trouvé.");
+      console.warn("No RSS feeds found.");
       return;
     }
 
@@ -119,9 +161,7 @@ async function refreshIncomingArticle() {
     for (const feed of feeds) {
       try {
         const rssFeed = await getRssFeed(feed.url);
-        console.log(
-          `📡 Récupération du flux RSS: ${feed.url}, ${rssFeed.items.length} articles trouvés`
-        );
+        console.log(`Retrieved RSS feed: ${feed.url}, found ${rssFeed.items.length} articles`);
 
         articles.push({
           feed_id: feed.id,
@@ -130,20 +170,17 @@ async function refreshIncomingArticle() {
           category_id: feed.category,
         });
       } catch (error) {
-        console.error(
-          `❌ Erreur lors de la récupération du flux RSS pour ${feed.url}:`,
-          error
-        );
+        console.error(`Error retrieving RSS feed for ${feed.url}:`, error);
       }
     }
 
     const articlesCreated = await createArticles(articles);
-    console.log(`🔥 Total articles créés dans ce cycle: ${articlesCreated}`);
+    console.log(`Total articles created in this cycle: ${articlesCreated}`);
   } catch (error) {
-    console.error("❌ Erreur lors de la récupération des flux RSS:", error);
+    console.error("Error retrieving RSS feeds:", error);
   }
 }
 
-setInterval(refreshIncomingArticle, 2000);
+setInterval(refreshIncomingArticle, 600000); // 10 minutes
 
 module.exports = { getRssFeed, createArticles, refreshIncomingArticle };

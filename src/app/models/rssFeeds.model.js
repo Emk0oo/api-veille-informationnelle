@@ -1,11 +1,11 @@
 const db = require("../config/db");
 
 class RssFeeds {
-    constructor(id, title, url, category) {
+    constructor(id, title, url, category_id) {
         this.id = id;
         this.title = title;
         this.url = url;
-        this.category = category;
+        this.category_id = category_id;
     }
 
     static getAll(result) {
@@ -18,9 +18,9 @@ class RssFeeds {
         db.query(query, id, result);
     }
 
-    static getByCategory(category, result) {
-        const query = "SELECT * FROM rss_feeds WHERE category = ?";
-        db.query(query, category, result);
+    static getByCategory_id(category_id, result) {
+        const query = "SELECT * FROM rss_feeds WHERE category_id = ?";
+        db.query(query, category_id, result);
     }
 
     static create(newRssFeed, result) {

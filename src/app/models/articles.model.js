@@ -66,6 +66,20 @@ class Articles {
         });
     }
 
+    static async existsByGuid(guid) {
+        return new Promise((resolve, reject) => {
+            const query = "SELECT COUNT(*) AS count FROM articles WHERE guid = ?";
+            db.query(query, [guid], (err, result) => {
+                if (err) {
+                    console.error("Erreur SQL lors de la vérification du GUID:", err);
+                    reject(err);
+                } else {
+                    resolve(result[0].count > 0);
+                }
+            });
+        });
+    }
+
     static updateById(id, article, result) {
         const query = "UPDATE articles SET ? WHERE id = ?";
         db.query(query, [article, id], result);

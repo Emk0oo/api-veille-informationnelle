@@ -47,9 +47,9 @@ exports.getByCategory = (req, res) => {
 };
 
 exports.create = (req, res) => {
-    const { title, url, category } = req.body;
+    const { title, url, category_id } = req.body;
 
-    const newRssFeed = new RssFeeds(null, title, url, category);
+    const newRssFeed = new RssFeeds(null, title, url, category_id);
 
     RssFeeds.create(newRssFeed, (err, data) => {
         if (err) {
@@ -122,7 +122,6 @@ exports.getAllFeedsForUser = async (req, res) => {
             const feeds = [];
             
             for (const subscription of subscriptions) {
-
                 let feedid = subscription.feed_id;
                 try {
                     const data = await new Promise((resolve, reject) => {
@@ -137,13 +136,14 @@ exports.getAllFeedsForUser = async (req, res) => {
                     
                     // console.log(data);
                     for (const feed of data) {
+                        console.log(feed);
                         try {
                             const rssFeed = await RssFeed.getRssFeed(feed.url);
                             feeds.push({
                                 feed_id: feed.id,
+                                category_id: feed.category_id,
                                 title: rssFeed.title,
                                 items: rssFeed.items,
-                                category_id: feed.category
                             });
                         } catch (error) {
                             console.error(`Error fetching RSS feed for ${feed.url}:`, error);
