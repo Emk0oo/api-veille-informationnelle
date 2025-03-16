@@ -1,6 +1,8 @@
 const express = require("express");
 const app = express();
 const dotenv = require("dotenv");
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 dotenv.config();
 const db = require("./config/db");
 const verifyToken = require("./middleware/verifyTokenValidity");
@@ -14,6 +16,7 @@ const port = process.env.API_PORT;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/auth", authRoute);
 app.use(verifyToken);
 app.use("/api/rssFeeds", rssFeedsRoute);
