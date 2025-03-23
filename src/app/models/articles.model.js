@@ -155,6 +155,10 @@ class Articles {
         db.query(query, [feed_id, guid], result);
     }
 
+    static getArticlesByFeedIdAndPublishedAt(feed_id, published_at, result) {
+        const query = "SELECT * FROM articles WHERE feed_id IN (?) AND DATE(published_at) = ?";
+        db.query(query, [feed_id, published_at], result);
+    }
 }
 
 module.exports = Articles;

@@ -134,7 +134,7 @@ exports.getAllFeedsForUser = async (req, res) => {
 
         try {
             const feeds = [];
-            
+
             for (const subscription of subscriptions) {
                 let feedid = subscription.feed_id;
                 try {
@@ -147,7 +147,7 @@ exports.getAllFeedsForUser = async (req, res) => {
                             }
                         });
                     });
-                    
+
                     // console.log(data);
                     for (const feed of data) {
                         console.log(feed);
@@ -163,7 +163,7 @@ exports.getAllFeedsForUser = async (req, res) => {
                             console.error(`Error fetching RSS feed for ${feed.url}:`, error);
                         }
                     }
-                    
+
                 } catch (err) {
                     console.error(`Error fetching feed for ${feedid}:`, err);
                 }
@@ -176,6 +176,37 @@ exports.getAllFeedsForUser = async (req, res) => {
                 message: "Failed to retrieve RSS feeds."
             });
         }
+    });
+};
+
+exports.getArticlesByUserIdAndDate = (req, res) => {
+    const userId = req.params.userId;
+    const date = req.params.date;
+
+    Subscription.getByUserId(userId, (err, subscriptions) => {
+        if (err) {
+            return res.status(500).send({
+                message: err.message || "Some error occurred while retrieving Subscriptions."
+            });
+        }
+
+        if (!subscriptions || subscriptions.length === 0) {
+            return res.status(404).send({
+                message: "No subscriptions found for this user."
+            });
+        }
+
+        const feedIds = subscriptions.map(subscription => subscription.feed_id);
+
+        Articles.getArticlesByFeedIdAndPublishedAt(feedIds, date, (err, articles) => {
+            if (err) {
+                return res.status(500).send({
+                    message: err.message || "Some error occurred while retrieving Articles."
+                });
+            }
+
+            res.status(200).send(articles);
+        });
     });
 };
 

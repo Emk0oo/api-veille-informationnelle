@@ -173,4 +173,31 @@ router.delete("/:id", rssFeedsController.deleteById);
  */
 router.get("/user/:userId", rssFeedsController.getAllFeedsForUser);
 
+/**
+ * @swagger
+ * /api/rssFeeds/user/{userId}/articles/{date}:
+ *   get:
+ *     summary: Get all articles for a user's subscriptions on a specific date
+ *     description: Retrieve a list of all articles for a specific user's subscriptions on a specific date.
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         description: The ID of the user to retrieve articles for.
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: date
+ *         required: true
+ *         description: The date to retrieve articles for.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: A list of articles for the specified user and date.
+ *       404:
+ *         description: Articles not found.
+ */
+router.get("/user/:userId/articles/:date", rssFeedsController.getArticlesByUserIdAndDate);
+
 module.exports = router;
