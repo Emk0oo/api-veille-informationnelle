@@ -53,10 +53,17 @@ exports.login = (req, res) => {
                         message: "Invalid email or password."
                     });
                 } else {
-                    const token = jwt.sign({ id: data[0].id }, process.env.JWT_SECRET, {
-                        expiresIn: 86400 // 24 hours
-                    });
-                    res.status(200).send({message: "User sucessfully connected", token: token });
+                    if(data[0].isAdmin === 0) {
+                        const token = jwt.sign({ id: data[0].id, isAdmin: data[0].isAdmin }, process.env.JWT_SECRET, {
+                            expiresIn: 86400 // 24 hours
+                        });
+                        res.status(200).send({message: "User sucessfully connected", token: token });
+                    }
+                        const token = jwt.sign({ id: data[0].id, isAdmin: data[0].isAdmin }, process.env.JWT_SECRET, {
+                            expiresIn: 86400 // 24 hours
+                        });
+                        res.status(200).send({message: "Admin sucessfully connected", token: token });
+                    
                 }
             }
         }
