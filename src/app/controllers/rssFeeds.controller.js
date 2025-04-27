@@ -153,12 +153,19 @@ exports.getAllFeedsForUser = async (req, res) => {
                         console.log(feed);
                         try {
                             const rssFeed = await RssFeed.getRssFeed(feed.url);
+                            console.log(`Retrieved RSS feed: ${feed.url}, found ${rssFeed.items.length} articles, adapter provided: ${feed.adapter_name}`);
+
+                            const adapter = require(`../rss-adapters/${feed.adapter_name}`);
+                            const parsedFeed =  adapter.parse(rssFeed);
+                            // console.log(parsedFeed);
+                            // console.log(adapter.parse(rssFeed));
                             feeds.push({
                                 feed_id: feed.id,
                                 category_id: feed.category_id,
                                 title: rssFeed.title,
-                                items: rssFeed.items,
+                                items: parsedFeed.items,
                             });
+                            // console.log('feeds', feeds);
                         } catch (error) {
                             console.error(`Error fetching RSS feed for ${feed.url}:`, error);
                         }
@@ -168,7 +175,7 @@ exports.getAllFeedsForUser = async (req, res) => {
                     console.error(`Error fetching feed for ${feedid}:`, err);
                 }
             }
-            RssFeed.createArticles(feeds);
+            RssFeed.createArticles(feeds); //A DECOMMENTER SI ON VEUT CREER LES ARTICLES A PARTIR DES FEEDS RECUPERES
             res.status(200).send(feeds);
         } catch (error) {
             console.error("Error fetching RSS feeds:", error);
