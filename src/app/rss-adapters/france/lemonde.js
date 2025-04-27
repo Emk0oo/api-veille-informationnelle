@@ -6,29 +6,34 @@ module.exports = {
         items: rawFeed.items.map(item => {
           // Extraire l'image - Le Monde utilise media:content
           let imageUrl = null;
-          if (item.enclosure && item.enclosure.url) {
-            imageUrl = item.enclosure.url;
-          } else if (item.mediaContent && item.mediaContent.length > 0) {
+          if (item.mediaContent && item.mediaContent.length > 0) {
             // Certains flux RDF/RSS utilisent mediaContent (transformé par rss-parser)
             const media = item.mediaContent.find(m => m.$ && (m.$.url || m.$.href));
             if (media && media.$) {
               imageUrl = media.$.url || media.$.href;
             }
-          } else if (item['media:content'] && item['media:content'].$ && item['media:content'].$.url) {
-            // Accès direct à media:content (au cas où)
-            imageUrl = item['media:content'].$.url;
+          } else if (item.enclosure && item.enclosure.url) {
+            imageUrl = item.enclosure.url;
           }
           
-          // Nettoyer le titre et la description des balises CDATA
+          // Nettoyer le titre des balises CDATA
           let title = item.title || '';
           if (typeof title === 'string') {
             title = title.replace(/<!\[CDATA\[|\]\]>/g, '').trim();
           }
           
-          let content = item.description || '';
-          if (typeof content === 'string') {
-            content = content.replace(/<!\[CDATA\[|\]\]>/g, '').trim();
+          // S'assurer que content et content_snippet ne sont pas vides
+          let content = '';
+          if (item.description) {
+            content = item.description.replace(/<!\[CDATA\[|\]\]>/g, '').trim();
+          } else if (item.content) {
+            content = item.content.replace(/<!\[CDATA\[|\]\]>/g, '').trim();
+          } else if (item.contentSnippet) {
+            content = item.contentSnippet.replace(/<!\[CDATA\[|\]\]>/g, '').trim();
           }
+          
+          // Créer un snippet à partir du contenu
+          const contentSnippet = content.length > 255 ? content.substring(0, 252) + '...' : content;
           
           // Normaliser le guid
           let guid = item.guid;
@@ -42,6 +47,7 @@ module.exports = {
             title: title,
             link: item.link || guid,
             content: content,
+            contentSnippet: contentSnippet,  // Ajout explicite du contentSnippet
             pubDate: item.pubDate,
             guid: guid || item.link,
             imageUrl: imageUrl,
